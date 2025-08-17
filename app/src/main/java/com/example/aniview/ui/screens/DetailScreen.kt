@@ -2,12 +2,16 @@ package com.example.aniview.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,7 +32,7 @@ fun formatDate(dateString: String?): String {
 }
 
 @Composable
-fun DetailScreen(anime: Anime) {
+fun DetailScreen(anime: Anime, onBackClick: () -> Unit) {
     val scrollState = rememberScrollState()
 
     Column(
@@ -38,12 +42,23 @@ fun DetailScreen(anime: Anime) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Button(onClick = onBackClick) {
+                Text("Back")
+            }
+        }
+
         AsyncImage(
             model = anime.images.jpg.image_url,
             contentDescription = anime.title,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
+                .clip(RoundedCornerShape(12.dp))
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -52,38 +67,45 @@ fun DetailScreen(anime: Anime) {
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Status: ${anime.status}",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "Aired: ${formatDate(anime.aired?.from)} - ${formatDate(anime.aired?.to)}",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "Episodes: ${anime.episodes ?: "Unknown"}",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "Rated: ${anime.rating ?: "Unknown"}",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
 
         Text(
-            text = "Status:${anime.status}",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Text(
-            text = "Aired:${formatDate(anime.aired?.from)} to ${formatDate(anime.aired?.to)}",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-        )
-        Text(
-            text = "Episodes:${anime.episodes ?: "Unknown"}",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Text(
-            text = "Rated:${anime.rating}",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Synopsis:",
+            text = "Synopsis",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.align(Alignment.Start)
         )
-        Spacer(modifier = Modifier.height(2.dp))
+
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = anime.synopsis,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.align(Alignment.Start)
         )
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
