@@ -32,7 +32,7 @@ fun formatDate(dateString: String?): String {
 }
 
 @Composable
-fun DetailScreen(anime: Anime, onBackClick: () -> Unit) {
+fun DetailScreen(anime: Anime) {
     val scrollState = rememberScrollState()
 
     Column(
@@ -42,14 +42,6 @@ fun DetailScreen(anime: Anime, onBackClick: () -> Unit) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Button(onClick = onBackClick) {
-                Text("Back")
-            }
-        }
 
         AsyncImage(
             model = anime.images.jpg.image_url,

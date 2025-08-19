@@ -1,6 +1,8 @@
 package com.example.aniview.ui.screens.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -9,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -35,52 +38,54 @@ fun TopBar(
             titleContentColor = Color.White
         ),
         title = {
-            if (onSearchSubmit != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White)
 
-                    TextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        placeholder = { Text("Search anime...", fontSize = 14.sp, color = Color.LightGray) },
-                        singleLine = true,
-                        modifier = Modifier
-                            .width(200.dp)
-                            .height(59.dp),
-                        textStyle = LocalTextStyle.current.copy(
-                            fontSize = 14.sp,
-                            color = Color.White
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            cursorColor = Color.White,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.White,
-                            unfocusedIndicatorColor = Color.LightGray
-                        ),
-                        trailingIcon = {
-                            IconButton(onClick = { onSearchSubmit(query) }) {
-                                Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
-                            }
-                        }
-                    )
+                onSearchSubmit?.let {
+                    SearchField(query, { query = it }, it)
                 }
-            } else {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge
-                )
             }
         }
+    )
+}
+
+
+
+@Composable
+fun SearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearchSubmit: (String) -> Unit
+) {
+    val textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = Color.White)
+    val colors = TextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedTextColor = Color.White,
+        cursorColor = Color.White,
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        focusedIndicatorColor = Color.White,
+        unfocusedIndicatorColor = Color.LightGray
+    )
+
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Search anime...", fontSize = 14.sp, color = Color.LightGray) },
+        singleLine = true,
+        modifier = Modifier.width(200.dp).height(59.dp),
+        textStyle = textStyle,
+        colors = colors,
+        trailingIcon = {
+            IconButton(onClick = { onSearchSubmit(query) }) {
+                Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+            }
+        },
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearchSubmit(query) })
     )
 }
