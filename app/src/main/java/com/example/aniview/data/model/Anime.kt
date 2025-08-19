@@ -8,7 +8,8 @@ data class Anime(
     val status: String,
     val rating: String,
     val episodes: Int?,
-    val aired: Aired?
+    val aired: Aired?,
+    val genres: List<Genre>?
 )
 
 data class Aired(
@@ -22,4 +23,11 @@ data class Images(
 
 data class Jpg(
     val image_url: String
+)
+
+data class Genre(
+    val mal_id: Int,
+    val type: String?,
+    val name: String?,
+    val url: String?
 )

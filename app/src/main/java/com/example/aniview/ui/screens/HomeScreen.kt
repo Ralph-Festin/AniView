@@ -20,9 +20,7 @@ fun HomeScreen(
     val searchedAnime by viewModel.searchedAnime
 
     val rows = if (searchedAnime != null) listOf(
-        "Search Results" to searchedAnime!!,
-        "Trending" to viewModel.trending,
-        "Updated Recently" to viewModel.latest
+        "Search Results" to searchedAnime!!
     ) else listOf(
         "Trending" to viewModel.trending,
         "Updated Recently" to viewModel.latest,

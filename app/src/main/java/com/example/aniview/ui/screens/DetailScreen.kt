@@ -81,6 +81,16 @@ fun DetailScreen(anime: Anime) {
                 text = "Rated: ${anime.rating ?: "Unknown"}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
+
+            val genreText = if (!anime.genres.isNullOrEmpty()) {
+                anime.genres.joinToString(separator = ", ") { it.name ?: ""}
+            } else {
+                "N/A"
+            }
+            Text (
+                text = "Genre: $genreText",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

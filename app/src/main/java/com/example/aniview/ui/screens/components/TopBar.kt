@@ -75,9 +75,9 @@ fun SearchField(
     TextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Search anime...", fontSize = 14.sp, color = Color.LightGray) },
+        placeholder = { Text("Search anime by title, genre, etc...", fontSize = 14.sp, color = Color.LightGray) },
         singleLine = true,
-        modifier = Modifier.width(200.dp).height(59.dp),
+        modifier = Modifier.width(300.dp).height(59.dp),
         textStyle = textStyle,
         colors = colors,
         trailingIcon = {
