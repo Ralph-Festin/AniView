@@ -1,15 +1,12 @@
 package com.example.aniview.viewmodel
 
-import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aniview.Genres
-import com.example.aniview.data.model.Aired
 import com.example.aniview.data.model.Anime
 import com.example.aniview.data.repository.AnimeRepository
 import com.example.aniview.network.RetrofitInstance
@@ -32,48 +29,16 @@ class HomeViewModel : ViewModel() {
     private var _searchedAnime = mutableStateOf<List<Anime>?>(null)
     val searchedAnime: State<List<Anime>?> = _searchedAnime
 
-
-    fun searchAnime(q: String){
+    fun searchAnime(query: String) {
         viewModelScope.launch {
-            Log.d("ViewModelDebut", "Parsing search query: '$q'")
-
-            var actualQuery: String? = null
-            var rating: String? = null
-            var genresList: List<String>? = null
-
-            val lowerCaseQuery = q.lowercase().trim()
-
-            if (lowerCaseQuery in listOf("g", "pg", "pg13", "r", "r+", "rx")) {
-                rating = when (lowerCaseQuery) {
-                    "g" -> "g"
-                    "pg" -> "pg"
-                    "r" -> "r"
-                    "r+" -> "r+"
-                    "rx" -> "rx"
-                    else -> null
-                }
-
-            }
-            else if (Genres.VALID_GENRES_MAP.keys.any { it.equals(q.trim(), ignoreCase = true) }) {
-                val matchedGenreName = Genres.VALID_GENRES_MAP.keys.first { it.equals(q.trim(), ignoreCase = true) }
-                val genreId = Genres.VALID_GENRES_MAP[matchedGenreName]
-
-                if (genreId != null) {
-                    genresList = listOf(genreId.toString())
-                }
-            }
-            else {
-                actualQuery = q
-            }
-
+            val parsed = parseMultiFilterQuery(query)
             _searchedAnime.value = repository.fetchSearchedAnime(
-                q = actualQuery ?: "",
-                r = rating,
-                g = genresList
+                q = parsed.actualQuery.ifBlank { null },
+                r = parsed.rating,
+                g = parsed.genres?.takeIf { it.isNotEmpty() }
             )
         }
     }
-
 
     init {
         viewModelScope.launch {
@@ -82,4 +47,36 @@ class HomeViewModel : ViewModel() {
             anticipated = repository.fetchAnticipated()
         }
     }
+
+    private fun parseMultiFilterQuery(q: String): ParsedQuery {
+        val tokens = q.split(",", " ")
+            .map { it.trim().lowercase() }
+            .filter { it.isNotEmpty() }
+
+        var rating: String? = null
+        val genresList = mutableListOf<String>()
+        val keywords = mutableListOf<String>()
+
+        for (token in tokens) {
+            when {
+                token in listOf("g", "pg", "pg13", "r", "r+", "rx") -> rating = token
+
+                Genres.VALID_GENRES_MAP.containsKey(token.replaceFirstChar { it.uppercase() }) -> {
+                    val normalizedToken = token.replaceFirstChar { it.uppercase() }
+                    Genres.VALID_GENRES_MAP[normalizedToken]?.let { genresList.add(it.toString()) }
+                }
+
+                else -> keywords.add(token)
+            }
+        }
+
+        val actualQuery = keywords.joinToString(" ")
+        return ParsedQuery(actualQuery, rating, genresList)
+    }
+
+    data class ParsedQuery(
+        val actualQuery: String,
+        val rating: String?,
+        val genres: List<String>?
+    )
 }

@@ -17,7 +17,7 @@ interface JikanApiService {
 
     @GET("anime")
     suspend fun searchAnime(
-        @Query("q") q: String,
+        @Query("q") q: String?,
         @Query("rating") rating: String?,
         @Query("genres") genres: List<String>?
     ): AnimeResponse
