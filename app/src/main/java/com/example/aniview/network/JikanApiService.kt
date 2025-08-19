@@ -1,6 +1,7 @@
 package com.example.aniview.network
 
 import com.example.aniview.data.model.AnimeResponse
+import com.example.aniview.data.model.GenreResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -19,9 +20,11 @@ interface JikanApiService {
     suspend fun searchAnime(
         @Query("q") q: String?,
         @Query("rating") rating: String?,
-        @Query("genres") genres: List<String>?
+        @Query("genres") genres: List<String>?,
+        @Query("start_date") startDate: String?,
+        @Query("end_date") endDate: String?
     ): AnimeResponse
+
+    @GET("genres/anime")
+    suspend fun getGenres(): GenreResponse
 }
-
-
-

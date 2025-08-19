@@ -11,7 +11,7 @@ import com.example.aniview.ui.screens.HomeScreen
 import com.example.aniview.viewmodel.HomeViewModel
 
 @Composable
-fun AniNavGraph(
+fun NavGraph(
     navController: NavHostController,
     modifier: Modifier,
     homeViewModel: HomeViewModel

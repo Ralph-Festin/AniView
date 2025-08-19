@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.aniview.navigation.AniNavGraph
+import com.example.aniview.navigation.NavGraph
 import com.example.aniview.ui.screens.components.TopBar
 import com.example.aniview.ui.theme.AniViewTheme
 import com.example.aniview.viewmodel.HomeViewModel
@@ -46,7 +46,7 @@ fun AniViewApp() {
             )
         },
         content = { padding ->
-            AniNavGraph(
+            NavGraph(
                 navController = navController,
                 modifier = Modifier.padding(padding),
                 homeViewModel = viewModel

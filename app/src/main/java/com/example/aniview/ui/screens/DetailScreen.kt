@@ -4,10 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,13 +20,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 fun formatDate(dateString: String?): String {
+    if (dateString.isNullOrBlank()) return "?"
     return try {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
         val outputFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-        val date = inputFormat.parse(dateString ?: "")
+        val date = inputFormat.parse(dateString)
         outputFormat.format(date ?: Date())
-    } catch (e: Exception) {
-        "Unknown"
+    } catch (_: Exception) {
+        "?"
     }
 }
 
@@ -42,7 +42,6 @@ fun DetailScreen(anime: Anime) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         AsyncImage(
             model = anime.images.jpg.image_url,
             contentDescription = anime.title,
@@ -52,13 +51,15 @@ fun DetailScreen(anime: Anime) {
                 .height(300.dp)
                 .clip(RoundedCornerShape(12.dp))
         )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = anime.title,
+            text = anime.title.ifBlank { "Untitled" },
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center
         )
+
         Spacer(modifier = Modifier.height(12.dp))
 
         Column(
@@ -66,35 +67,39 @@ fun DetailScreen(anime: Anime) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Status: ${anime.status}",
+                text = "Status: ${anime.status.ifBlank { "Unknown" }}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
+
+            val airedFrom = formatDate(anime.aired?.from)
+            val airedTo = anime.aired?.to?.let { formatDate(it) } ?: "Ongoing"
             Text(
-                text = "Aired: ${formatDate(anime.aired?.from)} - ${formatDate(anime.aired?.to)}",
+                text = "Aired: $airedFrom - $airedTo",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
+
             Text(
                 text = "Episodes: ${anime.episodes ?: "Unknown"}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
+
             Text(
-                text = "Rated: ${anime.rating ?: "Unknown"}",
+                text = "Rated: ${anime.rating.ifBlank { "Unrated" }}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
 
             val genreText = if (!anime.genres.isNullOrEmpty()) {
-                anime.genres.joinToString(separator = ", ") { it.name ?: ""}
+                anime.genres.joinToString(", ") { it.name ?: "Unknown" }
             } else {
                 "N/A"
             }
-            Text (
+            Text(
                 text = "Genre: $genreText",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
 
         Text(
             text = "Synopsis",
@@ -105,7 +110,7 @@ fun DetailScreen(anime: Anime) {
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = anime.synopsis,
+            text = anime.synopsis?.ifBlank { "No synopsis available." } ?: "No synopsis available.",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.align(Alignment.Start)
         )

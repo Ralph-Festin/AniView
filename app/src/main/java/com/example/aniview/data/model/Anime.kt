@@ -4,11 +4,12 @@ data class Anime(
     val mal_id: Int,
     val title: String,
     val images: Images,
-    val synopsis: String,
+    val synopsis: String?,
     val status: String,
     val rating: String,
     val episodes: Int?,
     val aired: Aired?,
+    val year: Int,
     val genres: List<Genre>?
 )
 
@@ -31,3 +32,6 @@ data class Genre(
     val name: String?,
     val url: String?
 )
+
+data class AnimeResponse(val data: List<Anime>)
+data class GenreResponse(val data: List<Genre>)
