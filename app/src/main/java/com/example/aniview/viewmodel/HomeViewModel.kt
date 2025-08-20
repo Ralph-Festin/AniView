@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aniview.data.model.Anime
-import com.example.aniview.data.model.Genre
 import com.example.aniview.data.repository.AnimeRepository
 import com.example.aniview.network.RetrofitInstance
 import kotlinx.coroutines.launch
@@ -16,18 +15,18 @@ class HomeViewModel : ViewModel() {
 
     private val repository = AnimeRepository(RetrofitInstance.api)
 
-    var trending by mutableStateOf<List<Anime>>(emptyList())
+    var trending by mutableStateOf(emptyList<Anime>())
         private set
 
-    var latest by mutableStateOf<List<Anime>>(emptyList())
+    var latest by mutableStateOf(emptyList<Anime>())
         private set
 
-    var anticipated by mutableStateOf<List<Anime>>(emptyList())
+    var anticipated by mutableStateOf(emptyList<Anime>())
         private set
 
     private var genreMap = emptyMap<String, String>() // genre name → genre ID
 
-    private var _searchedAnime = mutableStateOf<List<Anime>?>(null)
+    private val _searchedAnime = mutableStateOf<List<Anime>?>(null)
     val searchedAnime: State<List<Anime>?> = _searchedAnime
 
     init {
@@ -36,77 +35,86 @@ class HomeViewModel : ViewModel() {
             latest = repository.fetchLatest()
             anticipated = repository.fetchAnticipated()
 
-            val genres = repository.fetchGenres()
-            genreMap = genres
-                .filter { it.name != null }
-                .associate { it.name!!.lowercase() to it.mal_id.toString() }
+            genreMap = repository.fetchGenres()
+                .mapNotNull { genre ->
+                    genre.name?.lowercase()?.let { name -> name to genre.mal_id.toString() }
+                }
+                .toMap()
         }
     }
 
     fun searchAnime(query: String) {
-        if (query.isBlank()) {
-            _searchedAnime.value = null
-            return
-        }
+        _searchedAnime.value = null
+        if (query.isBlank() || genreMap.isEmpty()) return
 
         viewModelScope.launch {
-            try {
+            runCatching {
                 val parsed = parseMultiFilterQuery(query)
 
                 val results = repository.fetchSearchedAnime(
-                    q = parsed.actualQuery?.ifBlank { null },
+                    q = parsed.actualQuery,
                     r = parsed.rating,
-                    g = parsed.genres?.takeIf { it.isNotEmpty() },
+                    g = parsed.genres,
                     startDate = parsed.startDate,
                     endDate = parsed.endDate
                 )
 
                 val targetYear = parsed.startDate?.take(4)
 
-                _searchedAnime.value = results
-                    .filter { anime ->
-                        anime.aired?.from?.startsWith(targetYear ?: "") == true
-                    }
-                    .sortedByDescending { it.aired?.from }
+                results.filter {
+                    it.aired?.from?.startsWith(targetYear.orEmpty()) == true
+                }.sortedByDescending { it.aired?.from }
                     .distinctBy { it.mal_id }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
+            }.onSuccess {
+                _searchedAnime.value = it
+            }.onFailure {
+                it.printStackTrace()
                 _searchedAnime.value = emptyList()
             }
         }
     }
 
     private fun parseMultiFilterQuery(q: String): ParsedQuery {
-        val tokens = q.split(",", " ")
-            .map { it.trim().lowercase() }
-            .filter { it.isNotEmpty() }
+        val tokens = q.split(",", ", ")
+            .mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }
 
-        var rating: String? = null
-        var startDate: String? = null
-        var endDate: String? = null
+        val rating = tokens.find { it in listOf("g", "pg", "pg13", "r", "r+", "rx") }
+        val year = tokens.find { it.matches(Regex("^\\d{4}$")) }
+        val (startDate, endDate) = year?.let { "$it-01-01" to "$it-12-31" } ?: (null to null)
+
+        val tokenCounts = tokens.groupingBy { it }.eachCount()
         val genresList = mutableListOf<String>()
         val keywords = mutableListOf<String>()
 
         for (token in tokens) {
             when {
-                token in listOf("g", "pg", "pg13", "r", "r+", "rx") -> rating = token
+                token == rating || token == year -> Unit // already handled
 
                 genreMap.containsKey(token) -> {
-                    genreMap[token]?.let { genreId -> genresList.add(genreId) }
-                }
-
-                token.matches(Regex("^\\d{4}$")) -> {
-                    startDate = "$token-01-01"
-                    endDate = "$token-12-31"
+                    val count = tokenCounts[token] ?: 0
+                    if (count > 1) {
+                        // Treat one as genre, others as title keywords
+                        if (!genresList.contains(genreMap[token])) {
+                            genreMap[token]?.let { genresList.add(it) }
+                        } else {
+                            keywords.add(token)
+                        }
+                    } else {
+                        genreMap[token]?.let { genresList.add(it) }
+                    }
                 }
 
                 else -> keywords.add(token)
             }
         }
 
-        val actualQuery = keywords.joinToString(" ").ifBlank { null }
-        return ParsedQuery(actualQuery, rating, genresList, startDate, endDate)
+        return ParsedQuery(
+            actualQuery = keywords.joinToString(" ").ifBlank { null },
+            rating = rating,
+            genres = genresList.takeIf { it.isNotEmpty() },
+            startDate = startDate,
+            endDate = endDate
+        )
     }
 
     data class ParsedQuery(

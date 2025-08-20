@@ -2,14 +2,13 @@ package com.example.aniview.data.model
 
 data class Anime(
     val mal_id: Int,
-    val title: String,
+    val title: String?,
     val images: Images,
     val synopsis: String?,
-    val status: String,
-    val rating: String,
+    val status: String?,
+    val rating: String?,
     val episodes: Int?,
     val aired: Aired?,
-    val year: Int,
     val genres: List<Genre>?
 )
 

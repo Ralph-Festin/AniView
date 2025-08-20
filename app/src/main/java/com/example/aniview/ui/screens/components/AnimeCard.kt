@@ -44,7 +44,7 @@ fun AnimeCard(anime: Anime, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = anime.title,
+                text = anime.title ?: "Unknown",
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -55,7 +55,7 @@ fun AnimeCard(anime: Anime, onClick: () -> Unit) {
                     append("Episodes: ")
                     append(anime.episodes ?: "?")
                     append(" • ")
-                    append(anime.rating.take(2))},
+                    append(anime.rating?.take(2))},
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

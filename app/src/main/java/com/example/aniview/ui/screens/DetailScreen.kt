@@ -55,9 +55,9 @@ fun DetailScreen(anime: Anime) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = anime.title.ifBlank { "Untitled" },
             style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            text = anime.title ?: "Unknown"
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -67,7 +67,7 @@ fun DetailScreen(anime: Anime) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Status: ${anime.status.ifBlank { "Unknown" }}",
+                text = "Status: ${anime.status ?: "Unknown"}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
 
@@ -84,7 +84,7 @@ fun DetailScreen(anime: Anime) {
             )
 
             Text(
-                text = "Rated: ${anime.rating.ifBlank { "Unrated" }}",
+                text = "Rated: ${anime.rating ?: "Unknown"}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
 
