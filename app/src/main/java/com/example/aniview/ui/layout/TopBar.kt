@@ -1,4 +1,4 @@
-package com.example.aniview.ui.screens.components
+package com.example.aniview.ui.layout
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions

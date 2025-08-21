@@ -1,4 +1,4 @@
-package com.example.aniview.ui.screens.components
+package com.example.aniview.ui.screens.home.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

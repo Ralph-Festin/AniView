@@ -11,9 +11,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.aniview.navigation.NavGraph
-import com.example.aniview.ui.screens.components.TopBar
+import com.example.aniview.ui.layout.TopBar
 import com.example.aniview.ui.theme.AniViewTheme
 import com.example.aniview.viewmodel.HomeViewModel
+import com.example.aniview.viewmodel.SearchViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +32,9 @@ fun AniViewApp() {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isHome = currentRoute == "home"
-    val viewModel: HomeViewModel = viewModel()
+
+    val homeViewModel: HomeViewModel = viewModel()
+    val searchViewModel: SearchViewModel = viewModel()
 
     Scaffold(
         topBar = {
@@ -40,7 +43,7 @@ fun AniViewApp() {
                 showBackButton = !isHome,
                 onBackClick = { navController.popBackStack() },
                 onSearchSubmit = { query ->
-                    viewModel.searchAnime(query)
+                    searchViewModel.searchAnime(query)
                     if (!isHome) navController.popBackStack("home", false)
                 }
             )
@@ -49,7 +52,9 @@ fun AniViewApp() {
             NavGraph(
                 navController = navController,
                 modifier = Modifier.padding(padding),
-                homeViewModel = viewModel
+                homeViewModel = homeViewModel,
+                searchViewModel = searchViewModel,
+                contentPadding = padding
             )
         }
     )

@@ -1,4 +1,4 @@
-package com.example.aniview.ui.screens
+package com.example.aniview.ui.screens.home
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,15 +12,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.aniview.data.model.Anime
-import com.example.aniview.ui.screens.components.AnimeRow
+import com.example.aniview.ui.screens.home.components.AnimeRow
 import com.example.aniview.viewmodel.HomeViewModel
+import com.example.aniview.viewmodel.SearchViewModel
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
+    searchViewModel: SearchViewModel = viewModel(),
     navController: NavHostController,
+    contentPadding: PaddingValues
 ) {
-    val searchedAnime by viewModel.searchedAnime
+    val searchedAnime by searchViewModel.searchedAnime
 
     val rows: List<Pair<String, List<Anime>>> = searchedAnime?.let {
         listOf("Search Results" to it)
@@ -32,7 +35,12 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp),
+        contentPadding = PaddingValues(
+            top = contentPadding.calculateTopPadding() * 0.3f,
+            bottom = contentPadding.calculateBottomPadding() * 0.3f,
+            start = 4.dp,
+            end = 4.dp
+        )
     ) {
         if (searchedAnime?.isEmpty() == true) {
             item {
