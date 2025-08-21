@@ -20,8 +20,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.aniview.data.model.Anime
 
-
-
 @Composable
 fun AnimeCard(anime: Anime, onClick: () -> Unit) {
     Card(

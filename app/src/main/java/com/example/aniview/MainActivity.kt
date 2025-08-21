@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.aniview.navigation.NavGraph
 import com.example.aniview.ui.layout.TopBar
 import com.example.aniview.ui.theme.AniViewTheme
+import com.example.aniview.viewmodel.ExpandedCategory
 import com.example.aniview.viewmodel.HomeViewModel
 import com.example.aniview.viewmodel.SearchViewModel
 
@@ -30,18 +31,31 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AniViewApp() {
     val navController = rememberNavController()
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val currentRoute = navController.currentBackStackEntryAsState()
+        .value
+        ?.destination
+        ?.route
     val isHome = currentRoute == "home"
 
     val homeViewModel: HomeViewModel = viewModel()
     val searchViewModel: SearchViewModel = viewModel()
 
+    val expandedCategory = homeViewModel.expandedCategory
+    val showBackButton = !isHome || expandedCategory != ExpandedCategory.NONE
+    val topBarTitle = if (isHome) homeViewModel.currentTitle else "Details"
+
     Scaffold(
         topBar = {
             TopBar(
-                title = if (isHome) "AniView" else "Details",
-                showBackButton = !isHome,
-                onBackClick = { navController.popBackStack() },
+                title = topBarTitle,
+                showBackButton = showBackButton,
+                onBackClick = {
+                    if (expandedCategory != ExpandedCategory.NONE) {
+                        homeViewModel.collapseCategory()
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
                 onSearchSubmit = { query ->
                     searchViewModel.searchAnime(query)
                     if (!isHome) navController.popBackStack("home", false)
