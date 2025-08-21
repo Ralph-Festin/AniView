@@ -31,6 +31,7 @@ fun TopBar(
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val yearOptions = (1980..currentYear).map { it.toString() }.reversed()
 
+
     Surface(
         color = Color(0xFF673AB7),
         contentColor = Color.White,

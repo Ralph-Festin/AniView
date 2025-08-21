@@ -41,11 +41,11 @@ class SearchViewModel : ViewModel() {
     }
 
     fun toggleRating(rating: String) {
-        selectedRatings.value = selectedRatings.value.toggle(rating)
+        selectedRatings.value =  if (rating.isBlank()) emptySet() else setOf(rating)
     }
 
-    fun setYear(selected: String) {
-        selectedYears.value = if (selected.isBlank()) emptySet() else setOf(selected)
+    fun setYear(year: String) {
+        selectedYears.value = if (year.isBlank()) emptySet() else setOf(year)
     }
 
     fun searchAnime(query: String) {
