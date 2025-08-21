@@ -11,103 +11,100 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel : ViewModel() {
     private val repository = AnimeRepository(RetrofitInstance.api)
-
-    val genreMap: Map<String, String> get() = _genreMap
-    private var _genreMap = emptyMap<String, String>()
+    private val _genreMap = mutableStateOf<Map<String, String>>(emptyMap())
+    val genreMap: State<Map<String, String>> = _genreMap
 
     private val _searchedAnime = mutableStateOf<List<Anime>?>(null)
     val searchedAnime: State<List<Anime>?> = _searchedAnime
 
-    private val validRatings = setOf("g", "pg", "pg13", "r17", "r", "rx")
+    val selectedGenres  = mutableStateOf(setOf<String>())
+    val selectedRatings = mutableStateOf(setOf<String>())
+    val selectedYears   = mutableStateOf(setOf<String>())
 
     init {
         viewModelScope.launch {
-            _genreMap = repository.fetchGenres()
+            val fetched = repository
+                .fetchGenres()
                 .mapNotNull { genre ->
-                    genre.name?.lowercase()?.let { name -> name to genre.mal_id.toString() }
+                    genre.name
+                        ?.lowercase()
+                        ?.let { name -> name to genre.mal_id.toString() }
                 }
                 .toMap()
+
+            _genreMap.value = fetched
         }
+    }
+
+    fun toggleGenre(genre: String) {
+        selectedGenres.value = selectedGenres.value.toggle(genre)
+    }
+
+    fun toggleRating(rating: String) {
+        selectedRatings.value = selectedRatings.value.toggle(rating)
+    }
+
+    fun setYear(selected: String) {
+        selectedYears.value = if (selected.isBlank()) emptySet() else setOf(selected)
     }
 
     fun searchAnime(query: String) {
         _searchedAnime.value = null
-        if (query.isBlank() || genreMap.isEmpty()) return
+        if (genreMap.value.isEmpty()) return
 
         viewModelScope.launch {
             runCatching {
-                val parsed = parseMultiFilterQuery(query)
+                val selectedGenreIds = selectedGenres.value
+                    .mapNotNull { genreMap.value[it.lowercase()] }
 
-                val results = repository.fetchSearchedAnime(
-                    q = parsed.actualQuery,
-                    r = parsed.rating,
-                    g = parsed.genres,
-                    startDate = parsed.startDate,
-                    endDate = parsed.endDate
+                val rating = selectedRatings.value.firstOrNull()
+                val year = selectedYears.value.firstOrNull()
+                val (startDate, endDate) = year
+                    ?.let { "$it-01-01" to "$it-12-31" }
+                    ?: (null to null)
+
+                repository.fetchSearchedAnime(
+                    q = query.ifBlank { null },
+                    r = rating,
+                    g = selectedGenreIds.takeIf { it.isNotEmpty() },
+                    startDate = startDate,
+                    endDate = endDate
                 )
+                    .filter { anime ->
+                        val matchesYear = year == null || anime.aired?.from?.startsWith(year) == true
 
-                val targetYear = parsed.startDate?.take(4)
+                        val animeGenreIds = anime.genres?.mapNotNull { it.mal_id?.toString() } ?: emptyList()
+                        val matchesGenres = selectedGenreIds.all { it in animeGenreIds }
 
-                results.filter {
-                    it.aired?.from?.startsWith(targetYear.orEmpty()) == true
-                }.sortedByDescending { it.aired?.from }
-                    .distinctBy { it.mal_id }
-            }.onSuccess {
-                _searchedAnime.value = it
-            }.onFailure {
-                it.printStackTrace()
-                _searchedAnime.value = emptyList()
-            }
-        }
-    }
-
-    private fun parseMultiFilterQuery(q: String): ParsedQuery {
-        val tokens = q.split(",", ", ")
-            .mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }
-
-        val rating = tokens.firstOrNull { it in validRatings }
-        val year = tokens.find { it.matches(Regex("^\\d{4}$")) }
-        val (startDate, endDate) = year?.let { "$it-01-01" to "$it-12-31" } ?: (null to null)
-
-        val tokenCounts = tokens.groupingBy { it }.eachCount()
-        val genresList = mutableListOf<String>()
-        val keywords = mutableListOf<String>()
-
-        for (token in tokens) {
-            when {
-                token == rating || token == year -> Unit
-
-                genreMap.containsKey(token) -> {
-                    val count = tokenCounts[token] ?: 0
-                    if (count > 1) {
-                        if (!genresList.contains(genreMap[token])) {
-                            genreMap[token]?.let { genresList.add(it) }
-                        } else {
-                            keywords.add(token)
-                        }
-                    } else {
-                        genreMap[token]?.let { genresList.add(it) }
+                        matchesYear && matchesGenres
                     }
-                }
-
-                else -> keywords.add(token)
+                    .sortedByDescending { it.aired?.from }
+                    .distinctBy { it.mal_id }
             }
+                .onSuccess { results ->
+                    _searchedAnime.value = results
+                }
+                .onFailure {
+                    it.printStackTrace()
+                    _searchedAnime.value = emptyList()
+                }
         }
-
-        return ParsedQuery(
-            actualQuery = keywords.joinToString(" ").ifBlank { null },
-            rating = rating,
-            genres = genresList.takeIf { it.isNotEmpty() },
-            startDate = startDate,
-            endDate = endDate
-        )
     }
 
-    data class ParsedQuery(
-        val actualQuery: String?,
-        val rating: String?,
-        val genres: List<String>?,
-        val startDate: String?,
-        val endDate: String?
-    )
+
+    fun resetSearchState() {
+        selectedGenres.value = emptySet()
+        selectedRatings.value = emptySet()
+        selectedYears.value = emptySet()
+        _searchedAnime.value = null
+    }
+
+    fun shouldExitSearch(query: String): Boolean {
+        return query.isBlank() &&
+                selectedGenres.value.isEmpty() &&
+                selectedRatings.value.isEmpty() &&
+                selectedYears.value.isEmpty()
+    }
+    private fun Set<String>.toggle(item: String): Set<String> =
+        if (contains(item)) this - item else this + item
 }

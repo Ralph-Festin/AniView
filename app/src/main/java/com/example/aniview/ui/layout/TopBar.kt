@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.aniview.viewmodel.SearchViewModel
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,39 +23,96 @@ fun TopBar(
     title: String,
     showBackButton: Boolean,
     onBackClick: () -> Unit,
+    viewModel: SearchViewModel,
     onSearchSubmit: ((String) -> Unit)? = null
 ) {
     var query by remember { mutableStateOf("") }
 
-    TopAppBar(
-        navigationIcon = {
-            if (showBackButton) {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF673AB7),
-            titleContentColor = Color.White
-        ),
-        title = {
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    val yearOptions = (1980..currentYear).map { it.toString() }.reversed()
+
+    Surface(
+        color = Color(0xFF673AB7),
+        contentColor = Color.White,
+        shadowElevation = 4.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White)
+                if (showBackButton) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                }
 
-                onSearchSubmit?.let {
-                    SearchField(query, { query = it }, it)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    modifier = Modifier.weight(1f)
+                )
+
+                onSearchSubmit?.let { handleSearch ->
+                    SearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        onSearchSubmit = {
+                            if (viewModel.shouldExitSearch(it)) {
+                                viewModel.resetSearchState()
+                                onBackClick()
+                            } else {
+                                viewModel.searchAnime(it)
+                                handleSearch(it)
+                            }
+                        }
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FilterDropdown(
+                    label = "Genre",
+                    options = viewModel.genreMap.value.keys.map { it.uppercase() },
+                    selectedOptions = viewModel.selectedGenres.value.map { it.uppercase() }.toSet(),
+                    onOptionToggle = { displayValue ->
+                        viewModel.toggleGenre(displayValue.lowercase())
+                    }
+                )
+
+                FilterDropdown(
+                    label = "Rating",
+                    options = listOf("G", "PG", "PG13", "R17"),
+                    selectedOptions = viewModel.selectedRatings.value,
+                    onOptionToggle = viewModel::toggleRating,
+                    singleSelection = true
+                )
+
+                FilterDropdown(
+                    label = "Year",
+                    options = yearOptions,
+                    selectedOptions = viewModel.selectedYears.value,
+                    onOptionToggle = viewModel::setYear,
+                    singleSelection = true
+                )
+            }
         }
-    )
+    }
 }
-
-
 
 @Composable
 fun SearchField(
@@ -75,14 +134,26 @@ fun SearchField(
     TextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Search anime by title, genre, etc...", fontSize = 14.sp, color = Color.LightGray) },
+        placeholder = {
+            Text(
+                "Search anime by title, genre, etc...",
+                fontSize = 14.sp,
+                color = Color.LightGray
+            )
+        },
         singleLine = true,
-        modifier = Modifier.width(300.dp).height(59.dp),
+        modifier = Modifier
+            .widthIn(max = 180.dp)
+            .height(59.dp),
         textStyle = textStyle,
         colors = colors,
         trailingIcon = {
             IconButton(onClick = { onSearchSubmit(query) }) {
-                Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = Color.White
+                )
             }
         },
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),

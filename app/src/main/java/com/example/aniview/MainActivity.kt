@@ -31,10 +31,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AniViewApp() {
     val navController = rememberNavController()
-    val currentRoute = navController.currentBackStackEntryAsState()
-        .value
-        ?.destination
-        ?.route
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isHome = currentRoute == "home"
 
     val homeViewModel: HomeViewModel = viewModel()
@@ -56,6 +53,7 @@ fun AniViewApp() {
                         navController.popBackStack()
                     }
                 },
+                viewModel = searchViewModel,
                 onSearchSubmit = { query ->
                     searchViewModel.searchAnime(query)
                     if (!isHome) navController.popBackStack("home", false)
